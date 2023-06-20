@@ -1,0 +1,88 @@
+version: '3.8'
+
+networks:
+  recordsign_network:
+    driver: bridge
+
+services:
+  database_server:
+    container_name: database_container
+    image: mcr.microsoft.com/mssql/server
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=w3lc0m3@2023
+    ports:
+      - 1433:1433
+    volumes:
+      - database_server:/var/opt/mssql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - recordsign_network
+
+  message_queue_server:
+    container_name: message_queue_container
+    image: rabbitmq:3.11-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - message_queue_server:/var/lib/rabbitmq  
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin
+    
+    networks:
+      - recordsign_network
+  
+  key_management_service:
+    container_name: keymanagementservice_container
+    image: keymanagementservice_image
+    build:
+      context: ./KeyManagementService
+      dockerfile: Dockerfile
+    depends_on:
+      - database_server
+      - message_queue_server
+    networks:
+      - recordsign_network      
+
+  batch_processing_service:
+    container_name: batchprocessingservice_container
+    image: batchprocessingservice_image
+    build:
+      context: ./BatchProcessingService
+      dockerfile: Dockerfile
+    depends_on:
+      - database_server
+      - message_queue_server
+    networks:
+      - recordsign_network          
+      
+  signing_service:
+    container_name: signingservice_container
+    image: signingservice_image
+    build:
+      context: ./SigningService
+      dockerfile: Dockerfile
+    depends_on:
+      - database_server
+      - message_queue_server
+    networks:
+      - recordsign_network          
+
+  record_keeping_service:
+    container_name: recordkeepingservice_container
+    image: recordkeepingservice_image
+    build:
+      context: ./RecordKeepingService
+      dockerfile: Dockerfile
+    depends_on:
+      - database_server
+      - message_queue_server
+    networks:
+      - recordsign_network      
+
+
+volumes:
+  database_server:
+  message_queue_server:
