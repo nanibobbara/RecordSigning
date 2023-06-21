@@ -20,10 +20,11 @@ namespace KeyManagementService
             builder.Services.AddDbContext<RecordSignDbContext>(options =>
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("RecordSignDbConnection"));
-            });
+            },ServiceLifetime.Singleton);
 
-            builder.Services.AddScoped<RecordSignDbService>();
-            builder.Services.AddSingleton<MessageQueueService>();
+            builder.Services.AddSingleton<RecordSignDbService>();
+            builder.Services.AddSingleton<MessageQueuePublisher>(); 
+            //builder.Services.AddSingleton<MessageQueueService>(); 
 
             var app = builder.Build();
 

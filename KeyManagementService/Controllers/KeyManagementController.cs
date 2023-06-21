@@ -13,11 +13,11 @@ namespace KeyManagementService.Controllers
     public partial class KeyManagementController : Controller
     {
         private readonly RecordSignDbService _recordSignDbService;
-        private readonly MessageQueueService _messageQueueService;
-        public KeyManagementController(RecordSignDbService recordSignDbService, MessageQueueService messageQueueService)
+        private readonly MessageQueuePublisher _messageQueuePublisher;
+        public KeyManagementController(RecordSignDbService recordSignDbService, MessageQueuePublisher messageQueuePublisher )
         {
             _recordSignDbService = recordSignDbService;
-            _messageQueueService = messageQueueService;
+            _messageQueuePublisher = messageQueuePublisher;
         }
 
         /// <summary>
@@ -112,7 +112,7 @@ namespace KeyManagementService.Controllers
         public IActionResult SetBatchSize(int batchSize)
         {
             // Publish the batch size to RabbitMQ
-            _messageQueueService.PublishBatchSize(batchSize);
+            _messageQueuePublisher.PublishBatchSize(batchSize);
 
             return Ok();
         }
