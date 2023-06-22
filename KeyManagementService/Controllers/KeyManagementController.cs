@@ -46,7 +46,6 @@ namespace KeyManagementService.Controllers
         public async Task<ActionResult<string>> LoadKeys(int count)
         {
             List<KeyRing> keys = new List<KeyRing>();
-            //keys = await _recordSignDbService.LoadKeysFromKeyVault(count); 
             keys = Cryptography.GenerateKeys(count);
 
 

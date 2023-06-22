@@ -13,9 +13,7 @@ namespace RecordKeepingService
         private readonly string _hostName;
         private readonly string _exchangeName;
         private readonly string _sourceQueueName;
-        private readonly string _destinationQueueName;
         private readonly string _sourceRoutingKey;
-        private readonly string _destinationRoutingKey;
         private readonly RecordSignDbService _recordSignDbService;
         private IConnection _connection;
         private IModel _channel;

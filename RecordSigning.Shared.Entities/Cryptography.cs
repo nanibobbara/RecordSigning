@@ -1,15 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using RecordSigning.Shared.Entities.Models;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using RecordSigning.Shared;
-using RecordSigning.Shared.Entities.Models;
 
 namespace RecordSigning.Shared
 {
+    /// <summary>
+    /// Provides cryptographic operations such as key generation, signing, and signature verification.
+    /// </summary>
     public static class Cryptography
     {
+        /// <summary>
+        /// Generates a specified number of key pairs.
+        /// </summary>
+        /// <param name="count">The number of key pairs to generate.</param>
+        /// <returns>A list of generated key pairs.</returns>
         public static List<KeyRing> GenerateKeys(int count)
         {
             List<KeyRing> keys = new List<KeyRing>();
@@ -30,6 +35,10 @@ namespace RecordSigning.Shared
             return keys;
         }
 
+        /// <summary>
+        /// Generates a new RSA key pair.
+        /// </summary>
+        /// <returns>The generated RSA key pair.</returns>
         public static KeyPair GenerateKey()
         {
             using (RSA rsa = RSA.Create())
@@ -45,8 +54,12 @@ namespace RecordSigning.Shared
             }
         }
 
-
-
+        /// <summary>
+        /// Signs the specified plaintext using the provided RSA private key.
+        /// </summary>
+        /// <param name="plainText">The plaintext to sign.</param>
+        /// <param name="privateKey">The RSA private key.</param>
+        /// <returns>The signature of the plaintext.</returns>
         public static byte[] SignData(string plainText, RSAParameters privateKey)
         {
             using (RSA rsa = RSA.Create())
@@ -58,6 +71,12 @@ namespace RecordSigning.Shared
             }
         }
 
+        /// <summary>
+        /// Signs a batch of unsigned records using the provided key pair.
+        /// </summary>
+        /// <param name="unsignedRecords">The batch of unsigned records.</param>
+        /// <param name="keyPair">The key pair used for signing.</param>
+        /// <returns>The signed record batch.</returns>
         public static SignedRecordBatch SignBatchOfUnsignedRecords(UnsignedRecordBatch unsignedRecords, KeyPair keyPair)
         {
             using (RSA rsa = RSA.Create())
