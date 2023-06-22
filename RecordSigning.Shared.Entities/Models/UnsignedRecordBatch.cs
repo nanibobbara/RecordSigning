@@ -6,15 +6,15 @@ using System.Threading.Tasks;
 
 namespace RecordSigning.Shared
 {
-    public class BatchRecord
+    public class UnsignedRecordBatch
     {
         public int batch_id { get; set; }
-        public List<Record> batch_records { get; set; }
+        public List<Record> records { get; set; }
 
-        public BatchRecord(int batch_id, List<Record> batch_records)
+        public UnsignedRecordBatch(int batch_id, List<Record> records)
         {
             this.batch_id = batch_id;
-            this.batch_records = batch_records;
+            this.records = records;
         }
     }
 }

@@ -25,9 +25,9 @@ namespace KeyManagementService.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("api/Keys/getNextAvailableKey")]
-        public async Task<ActionResult<Key>> GetNextAvailableKey()
+        public async Task<ActionResult<KeyRing>> GetNextAvailableKey()
         {
-            var response = _recordSignDbService.GetNextAvailableKey();
+            var response = await _recordSignDbService.GetNextAvailableKey();
 
             if (response == null)
             {
@@ -45,7 +45,7 @@ namespace KeyManagementService.Controllers
         [HttpPost("api/Keys/count")]
         public async Task<ActionResult<string>> LoadKeys(int count)
         {
-            List<Key> keys = new List<Key>();
+            List<KeyRing> keys = new List<KeyRing>();
             //keys = await _recordSignDbService.LoadKeysFromKeyVault(count); 
             keys = Cryptography.GenerateKeys(count);
 
@@ -78,7 +78,7 @@ namespace KeyManagementService.Controllers
         /// <param name="isInUse"></param>
         /// <returns></returns>
         [HttpPut("api/Keys")]
-        public async Task<ActionResult<Key>> UpdateKeyStatus(int keyId, bool isInUse = false)
+        public async Task<ActionResult<KeyRing>> UpdateKeyStatus(int keyId, bool isInUse = false)
         {
             var response = await _recordSignDbService.UpdateKeyStatus(keyId, isInUse);
 

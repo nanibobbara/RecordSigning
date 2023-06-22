@@ -20,7 +20,7 @@ IF OBJECT_ID('Records', 'U') IS NOT NULL
 CREATE TABLE Keys (
     key_id INT IDENTITY(1,1) PRIMARY KEY,
     key_name VARCHAR(250),
-    key_data varbinary(max),
+    key_data VARCHAR(max),
     is_in_use BIT DEFAULT (0),
     last_used_at DATETIME DEFAULT (getdate())
 );

@@ -5,170 +5,101 @@ namespace RecordSigning.Shared
 {
     public class RecordSignDbService
     {
-        RecordSignDbContext Context
+        private readonly RecordSignDbContext _context;
+
+        public RecordSignDbService( RecordSignDbContext context)
         {
-            get
-            {
-                return this.context;
-            }
+            _context = context;
         }
 
-        private readonly RecordSignDbContext context;
 
-        public RecordSignDbService(RecordSignDbContext context)
-        {
-            this.context = context;
-        }
+        #region Record methods
 
-        //public void Reset() => Context.ChangeTracker.Entries().Where(e => e.Entity != null).ToList().ForEach(e => e.State = EntityState.Detached);
-
-
-        // Record methods
-
-        /// <summary>
-        /// fetch the next available records to process of given batch size to process
-        /// </summary>
-        /// <param name="batchSize"></param>
-        /// <returns></returns>
-        public async Task<List<Record>> GetRecords(int batchSize)
+        public List<Record> GetRecords(int batchSize)
         {
             List<Record> records = new List<Record>();
-
-            // fetch next available records to process of given batch size to process
-            var recs = Context.Records
+            var recordIds =  _context.Records
                 .Where(r => r.batch_id == 0 && r.is_signed == false)
-                .Take(batchSize).ToList<Record>();
+                .OrderBy(x=>x.batch_id)
+                .Take(batchSize).Select(r => r.record_id)
+                .ToList();
 
-            // get the max batch id and increment by 1
-            // assign the new batch id to the records to avoid duplicate processing
-            if (recs?.Count > 0)
+            if (recordIds.Count > 0)
             {
-                records = recs;
-                int maxbatchId = Context.Records.Max(r => r.batch_id) + 1;
-                records.ForEach(record => record.batch_id = maxbatchId);
-                await UpdateRecordStatusAsync(records);
-            }
-
-            return await Task.FromResult(records);
-        }
-
-        public List<Record> GetRecords1(int batchSize)
-        {
-            List<Record> records = new List<Record>();
-
-            // fetch next available records to process of given batch size to process
-            var recs = Context.Records
-                .Where(r => r.batch_id == 0 && r.is_signed == false)
-                .Take(batchSize).ToList<Record>();
-
-            // get the max batch id and increment by 1
-            // assign the new batch id to the records to avoid duplicate processing
-            if (recs?.Count > 0)
-            {
-                records = recs;
-                int maxbatchId = Context.Records.Max(r => r.batch_id) + 1;
-                records.ForEach(record => record.batch_id = maxbatchId);
-                UpdateRecordStatus(records);
+                int maxBatchId = _context.Records.Max(r => r.batch_id);
+                maxBatchId++;
+                records = UpdateRecordStatus(recordIds, maxBatchId);
             }
 
             return records;
         }
 
-        public async Task<Record?> UpdateRecordStatus(int recordId)
+        public List<Record> UpdateRecordStatus(List<int> recordIds, int batchId)
         {
-            Record? itemToUpdate = await Context.Records
-                .Where(r => r.record_id == recordId)
-                .FirstOrDefaultAsync();
+            var recordsToUpdate = _context.Records
+                .Where(r => recordIds.Contains(r.record_id))
+                .ToList();
 
-            if (itemToUpdate == null)
+            if (recordsToUpdate.Count > 0)
             {
-                throw new Exception($"{recordId}, Record not found");
+                foreach (var record in recordsToUpdate)
+                {
+                    record.batch_id = batchId;
+                }
+
+                _context.SaveChanges();
             }
-
-            itemToUpdate.is_signed = true;
-
-            var entryToUpdate = Context.Entry(itemToUpdate);
-            entryToUpdate.CurrentValues.SetValues(itemToUpdate);
-            entryToUpdate.State = EntityState.Modified;
-
-            if (Context.ChangeTracker.HasChanges())
-            {
-                await Context.SaveChangesAsync();
-            }
-
-            return itemToUpdate;
-        }
-
-        public async Task<List<Record>> UpdateRecordStatusAsync(List<Record> recordsToUpdate)
-        {
-            if (recordsToUpdate.Count == 0)
-            {
-                throw new Exception("No records found");
-            }
-
-            Context.Records.UpdateRange(recordsToUpdate);
-            await Context.SaveChangesAsync();
-
             return recordsToUpdate;
         }
-
-        public void UpdateRecordStatus(List<Record> recordsToUpdate)
+        
+        public void UpdateRecordStatus(int batchId)
         {
-            if (recordsToUpdate.Count == 0)
+            if (batchId > 0)
             {
-                throw new Exception("No records found");
+                var recordsToUpdate = _context.Records.Where(r => r.batch_id == batchId).ToList();
+                foreach (var recordToUpdate in recordsToUpdate)
+                {
+                    recordToUpdate.is_signed = true;
+                }
+
+                _context.Records.UpdateRange(recordsToUpdate);
+                _context.SaveChanges();
             }
-
-            Context.Records.UpdateRange(recordsToUpdate);
-            Context.SaveChanges();
-
         }
 
+        #endregion
 
-
-        // SignedRecord methods
+        
+        #region SignedRecord methods
 
         public async Task<List<SignedRecord>> GetSignedRecords(int batchId)
         {
-            var items = Context.SignedRecords.Where(x => x.batch_id == batchId).ToList<SignedRecord>();
+            var items = await _context.SignedRecords.Where(x => x.batch_id == batchId).ToListAsync();
 
-            return await Task.FromResult(items);
-        }
-        public async Task<SignedRecord> CreateSignedRecord(SignedRecord signedrecord)
-        {
-            var existingItem = Context.SignedRecords
-                              .Where(i => i.record_id == signedrecord.record_id)
-                              .FirstOrDefault();
-
-            if (existingItem != null)
-            {
-                throw new Exception("Item already signed");
-            }
-
-            try
-            {
-                await Context.SignedRecords.AddAsync(signedrecord);
-                Context.SaveChanges();
-            }
-            catch
-            {
-                Context.Entry(signedrecord).State = EntityState.Detached;
-                throw;
-            }
-
-            return signedrecord;
+            return items;
         }
 
-
-
-        // Key methods
-
-        public Task<List<Key>> LoadKeysFromKeyVault(int count)
+        public void CreateSignedRecord(List<SignedRecord> signedrecords)
         {
-            List<Key> keys = new List<Key>();
+
+            if (signedrecords?.Count > 0)
+            {
+                _context.SignedRecords.AddRange(signedrecords);
+                _context.SaveChangesAsync();                
+            }
+        }
+
+        #endregion
+
+
+        #region KeyRing methods
+
+        public Task<List<KeyRing>> LoadKeysFromKeyVault(int count)
+        {
+            List<KeyRing> keys = new List<KeyRing>();
             for (int i = 0; i < 20; i++)
             {
-                var key = new Key()
+                var key = new KeyRing()
                 {
                     key_name = $"Seeded_key_for_testing_{i}",
                     is_in_use = false,
@@ -181,25 +112,23 @@ namespace RecordSigning.Shared
             return Task.FromResult(keys);
         }
 
-        public async Task<string> SeedToKeys(List<Key> keys)
+        public async Task<string> SeedToKeys(List<KeyRing> keys)
         {
-            if (keys?.Count() > 0)
+            if (keys?.Count > 0)
             {
-                await Context.Keys.AddRangeAsync(keys);
-                Context.SaveChanges();
-            };
+                _context.KeyRing.AddRange(keys);
+                await _context.SaveChangesAsync();
+            }
 
             return $"{keys?.Count()}, keys loaded from Key Vault";
         }
 
-
-        /*
-        public async Task<Key?> GetNextAvailableKey()
+        public async Task<KeyRing?> GetNextAvailableKey()
         {
-            var availableKey = await Context.Keys
+            var availableKey = await _context.KeyRing
                 .Where(key => key.is_in_use == false)
-                .OrderBy(key=>key.last_used_at)
-                .FirstOrDefaultAsync<Key>();
+                .OrderBy(key => key.last_used_at)
+                .FirstOrDefaultAsync();
 
             if (availableKey == null)
             {
@@ -208,29 +137,12 @@ namespace RecordSigning.Shared
 
             await UpdateKeyStatus(availableKey.key_id, true);
             return availableKey;
-        }*/
-
-        public Key GetNextAvailableKey()
-        {
-            var availableKey = Context.Keys
-                .Where(key => key.is_in_use == false)
-                .OrderBy(key => key.last_used_at)
-                .FirstOrDefault<Key>();
-
-            if (availableKey == null)
-            {
-                return null;
-            }
-
-            UpdateKeyStatus(availableKey.key_id, true);
-            return availableKey;
         }
 
-        public async Task<Key?> UpdateKeyStatus(int keyId, bool isInUse = false)
+        public async Task<KeyRing?> UpdateKeyStatus(int keyId, bool isInUse = false)
         {
-            var itemToUpdate = Context.Keys
-                                  .Where(i => i.key_id == keyId)
-                                  .FirstOrDefault();
+            var itemToUpdate = await _context.KeyRing
+                .FirstOrDefaultAsync(i => i.key_id == keyId);
 
             if (itemToUpdate == null)
             {
@@ -240,30 +152,24 @@ namespace RecordSigning.Shared
             itemToUpdate.is_in_use = isInUse;
             itemToUpdate.last_used_at = DateTime.UtcNow;
 
-            var entryToUpdate = Context.Entry(itemToUpdate);
-            entryToUpdate.CurrentValues.SetValues(itemToUpdate);
-            entryToUpdate.State = EntityState.Modified;
-
-            if (Context.ChangeTracker.HasChanges())
-            {
-                await Context.SaveChangesAsync();
-            }
+            _context.Update(itemToUpdate);
+            await _context.SaveChangesAsync();
 
             return itemToUpdate;
         }
 
         public async Task<string> DeleteKeys()
         {
-            var itemsToDelete = await Context.Keys.ToListAsync();
-            if (itemsToDelete?.Count() > 0)
+            var itemsToDelete = await _context.KeyRing.ToListAsync();
+            if (itemsToDelete?.Count > 0)
             {
-                Context.Keys.RemoveRange(itemsToDelete);
-                await Context.SaveChangesAsync();
+                _context.KeyRing.RemoveRange(itemsToDelete);
+                await _context.SaveChangesAsync();
             }
-
 
             return $"{itemsToDelete?.Count}, records been deleted";
         }
-    }
 
+        #endregion
+    }
 }

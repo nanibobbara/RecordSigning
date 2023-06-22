@@ -31,13 +31,13 @@ namespace RecordSigning.Shared
               .Property(p => p.is_signed)
               .HasDefaultValueSql(@"((0))");
 
-            builder.Entity<Key>()
+            builder.Entity<KeyRing>()
               .Property(p => p.last_used_at)
               .HasColumnType("datetime");
             this.OnModelBuilding(builder);
         }
 
-        public DbSet<Key> Keys { get; set; }
+        public DbSet<KeyRing> KeyRing { get; set; }
 
         public DbSet<Record> Records { get; set; }
 

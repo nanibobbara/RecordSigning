@@ -1,77 +1,90 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+﻿using System;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
+using RecordSigning.Shared;
+using RecordSigning.Shared.Entities.Models;
 
 namespace RecordSigning.Shared
 {
     public static class Cryptography
     {
-        public static List<Key> GenerateKeys(int count)
+        public static List<KeyRing> GenerateKeys(int count)
         {
-            List<Key> keys = new List<Key>();
+            List<KeyRing> keys = new List<KeyRing>();
 
             for (int i = 0; i < count; i++)
             {
-                var key = new Key()
+                KeyPair keyPair = GenerateKey();
+                var key = new KeyRing()
                 {
                     key_name = Guid.NewGuid().ToString(),
                     is_in_use = false,
                     last_used_at = DateTime.UtcNow,
-                    key_data = GenerateKey()
+                    key_data = JsonSerializer.Serialize(keyPair)
                 };
                 keys.Add(key);
             }
 
-
-
             return keys;
         }
 
-        public static byte[] GenerateKey()
+        public static KeyPair GenerateKey()
         {
             using (RSA rsa = RSA.Create())
             {
-                return rsa.ExportRSAPrivateKey();
-            }
+                byte[] privateKey = rsa.ExportRSAPrivateKey();
+                byte[] publicKey = rsa.ExportRSAPublicKey();
 
+                return new KeyPair
+                {
+                    PrivateKey = privateKey,
+                    PublicKey = publicKey
+                };
+            }
         }
 
-        public static byte[] SignData(string plainText, byte[] privateKey)
+
+
+        public static byte[] SignData(string plainText, RSAParameters privateKey)
         {
             using (RSA rsa = RSA.Create())
             {
-                rsa.ImportRSAPrivateKey(privateKey, out _);
+                rsa.ImportParameters(privateKey);
                 byte[] dataBytes = Encoding.UTF8.GetBytes(plainText);
                 byte[] signature = rsa.SignData(dataBytes, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
                 return signature;
             }
         }
 
-        public static List<Record> SignData(List<Record> records, RSAParameters privateKey)
+        public static SignedRecordBatch SignBatchOfUnsignedRecords(UnsignedRecordBatch unsignedRecords, KeyPair keyPair)
         {
             using (RSA rsa = RSA.Create())
             {
-                rsa.ImportParameters(privateKey);
+                rsa.ImportRSAPrivateKey(keyPair.PrivateKey, out _);
 
-                foreach (Record record in records)
+                List<SignedRecord> signedRecords = new List<SignedRecord>();
+                foreach (Record record in unsignedRecords.records)
                 {
                     string data = record.record_data;
                     byte[] dataToSign = Encoding.UTF8.GetBytes(data);
                     byte[] signature = rsa.SignData(dataToSign, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
 
-                    record.is_signed = true;
-
-                    record.SignedRecords.Add(new SignedRecord
+                    SignedRecord signedRec = new SignedRecord
                     {
-                        key_name = rsa.ToXmlString(true),
-                        signature_data = Convert.ToBase64String(signature)
-                    });
+                        record_id = record.record_id,
+                        batch_id = record.batch_id,
+                        key_name = "Sample Key Name",
+                        signature_data = Convert.ToBase64String(signature),
+                        signed_timestamp = DateTime.UtcNow
+                    };
+                    signedRecords.Add(signedRec);
                 }
 
-                //byte[] dataToSign = Encoding.UTF8.GetBytes(data);
-                //byte[] signature = rsa.SignData(dataToSign, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+                SignedRecordBatch signedRecordBatch = new SignedRecordBatch(unsignedRecords.batch_id, signedRecords);
 
-                return records;
+                return signedRecordBatch;
             }
         }
     }

@@ -24,6 +24,8 @@ namespace RecordSigning.Shared
         [ConcurrencyCheck]
         public string signature_data { get; set; }
 
+        [ConcurrencyCheck]
+        public DateTime? signed_timestamp { get; set; }
         public Record Record { get; set; }
 
 

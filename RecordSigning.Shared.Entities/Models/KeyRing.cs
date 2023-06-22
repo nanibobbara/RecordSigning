@@ -3,8 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RecordSigning.Shared
 {
-    [Table("Keys", Schema = "dbo")]
-    public partial class Key
+    [Table("KeyRing", Schema = "dbo")]
+    public partial class KeyRing
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -14,7 +14,7 @@ namespace RecordSigning.Shared
         public string key_name { get; set; }
 
         [ConcurrencyCheck]
-        public byte[] key_data { get; set; }
+        public string key_data { get; set; }
 
         [ConcurrencyCheck]
         public bool? is_in_use { get; set; }

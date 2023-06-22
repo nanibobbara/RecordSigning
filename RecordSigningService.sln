@@ -4,10 +4,22 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.6.33801.468
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BatchProcessingService", "BatchProcessingService\BatchProcessingService.csproj", "{15DDE8CC-D126-4C6C-803F-3CEB42303771}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8095221E-86B5-4185-AD3E-BEF2AC552AEA} = {8095221E-86B5-4185-AD3E-BEF2AC552AEA}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RecordKeepingService", "RecordkeepingService\RecordKeepingService.csproj", "{05630DAE-2566-4E77-86AD-50F72DE9FCB6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{15DDE8CC-D126-4C6C-803F-3CEB42303771} = {15DDE8CC-D126-4C6C-803F-3CEB42303771}
+		{8095221E-86B5-4185-AD3E-BEF2AC552AEA} = {8095221E-86B5-4185-AD3E-BEF2AC552AEA}
+		{E29F18D3-3E4F-4898-B781-4237C4794361} = {E29F18D3-3E4F-4898-B781-4237C4794361}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SigningService", "SigningService\SigningService.csproj", "{E29F18D3-3E4F-4898-B781-4237C4794361}"
+	ProjectSection(ProjectDependencies) = postProject
+		{15DDE8CC-D126-4C6C-803F-3CEB42303771} = {15DDE8CC-D126-4C6C-803F-3CEB42303771}
+		{8095221E-86B5-4185-AD3E-BEF2AC552AEA} = {8095221E-86B5-4185-AD3E-BEF2AC552AEA}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyManagementService", "KeyManagementService\KeyManagementService.csproj", "{8095221E-86B5-4185-AD3E-BEF2AC552AEA}"
 EndProject
