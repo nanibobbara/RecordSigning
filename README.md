@@ -101,12 +101,11 @@ The Record Keeping Service is responsible for storing the signed records in a da
 
 ## Screenshots
 
-![Components Interaction](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
+![Components Interaction](https://github.com/nanibobbara/RecordSigning/blob/main/Components.png)
 
-![Sequence](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
+![Sequence](https://github.com/nanibobbara/RecordSigning/blob/main/Flow.PNG)
 
-![ER](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
-
+![ER](https://github.com/nanibobbara/RecordSigning/blob/main/ER.PNG)
 
 ## Installation
 
